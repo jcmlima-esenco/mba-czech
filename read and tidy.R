@@ -22,24 +22,33 @@ convert_from_czech <- function(original) {
 }
 
 birth_day <- function(birth_number) {
-  as.integer( substr(birth_number, 5, 6) )
+  as.integer( substr(birth_number, 3, 4) )
 }
 
 
-gender <- function(birth_day) {
-  ifelse( birth_day > 50 , 
+decode_gender <- function(birth_day) {
+  ifelse( birth_day >= 50 , 
     "Female", 
     "Male"
   )
 }
 
+decode_birth_date <- function(gender, birth_number) {
+  if_else(gender == "Male",
+        as.Date.character(as.character(birth_number),"%Y%m%d"),
+        as.Date.character(as.character(birth_number-5000),"%Y%m%d")
+  )
+}
+
 transactions <- read.csv2("data/trans.asc", stringsAsFactors = FALSE)
 
-transactions <- transactions %>% mutate(amount = as.double(amount)) %>%
-    mutate(balance = as.double(balance)) %>%
-    mutate(date = as.Date.character(date,"%y%m%d")) %>%
-    mutate(type = convert_from_czech(type)) %>%
-    mutate(operation = convert_from_czech(operation))
+transactions <- transactions %>% mutate(
+  amount = as.double(amount),
+  balance = as.double(balance),
+  date = as.Date.character(date,"%y%m%d"),
+  type = convert_from_czech(type),
+  operation = convert_from_czech(operation)
+)
 
 transactions %>% count(type)
 
@@ -57,6 +66,17 @@ cards <- read.csv2("data/card.asc", stringsAsFactors = FALSE)
 cards <- cards %>% mutate(issued = as.Date.character(issued,"%y%m%d"))
 
 clients <- read.csv2("data/client.asc", stringsAsFactors = FALSE)
+
+clients <- clients %>% mutate(
+  gender = decode_gender(birth_day(birth_number)),
+  birth_date = decode_birth_date(birth_number)
+)
+
+districts <- read.csv2("data/district.asc", stringsAsFactors = FALSE)
+districts <- 
+
+mmm <- districts %>% left_join(clients, by= c("A1" = "district_id"))
+
 
 
 
