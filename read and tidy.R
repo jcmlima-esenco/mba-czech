@@ -21,6 +21,18 @@ convert_from_czech <- function(original) {
   )
 }
 
+birth_day <- function(birth_number) {
+  as.integer( substr(birth_number, 5, 6) )
+}
+
+
+gender <- function(birth_day) {
+  ifelse( birth_day > 50 , 
+    "Female", 
+    "Male"
+  )
+}
+
 transactions <- read.csv2("data/trans.asc", stringsAsFactors = FALSE)
 
 transactions <- transactions %>% mutate(amount = as.double(amount)) %>%
@@ -39,4 +51,12 @@ accounts <- accounts %>% mutate(date = as.Date.character(date,"%y%m%d")) %>%
     mutate(frequency = convert_from_czech(frequency))
 
 accounts %>% count(frequency)
+
+cards <- read.csv2("data/card.asc", stringsAsFactors = FALSE)
+
+cards <- cards %>% mutate(issued = as.Date.character(issued,"%y%m%d"))
+
+clients <- read.csv2("data/client.asc", stringsAsFactors = FALSE)
+
+
 
