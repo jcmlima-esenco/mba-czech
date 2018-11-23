@@ -1,0 +1,53 @@
+---
+title: "Analise Czech"
+output: html_notebook
+---
+
+# Objetivo
+
+Um banco quer melhor os seus servicos.
+
+Como exemplo, os gerentes tem apenas uma idéia vaga, de quem é um bom cliente e de quem é o mal cliente.
+
+Um bom cliente, iremos definir que é o cliente que realizar emprestimos e paga os mesmos. Cliente adimplente.
+Um mal cliente, iremos definir que é o cliente que realizar emprestimos e não paga os mesmos. Cliente inadimplente.
+
+As situações de um emprestimo podem ser:
+
+'A' Contrato de emprestimo finalizado sem problema.
+'B' Contrato de emprestimo finalizado, porém o emprestimo não foi pago.
+'C' Contrato de emprestimo em andamento, com pagamentos em dia.
+'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
+
+A pergunta que se quer responder é.
+Dado um cliente, com contrato em andamento, qual a probabilidade de quando o emprestimo for finalizado, ele terminar em "default" ou quitado?
+
+*Podemos também determinar quem é um bom cliente por outros prismas, mas para esta análise iremos focar na relação de cliente e emprestimos.*
+
+# Leitura de dados
+
+O banco possue dados históricos, de transações, emprestimos, geolocalizacao, uso do cartão e outros. Os dados foram limpos e encontram-se em uma base MySQL
+
+Para mais informações sobre o modelo de dados, vide documento **PKDD'99 Discovery Challenge Guide to the Financial Data Set**
+
+Estes dados serão utilizados para a modelagem do problema e construção de um modelo preditivo
+
+```{r}
+library(RMySQL)
+con <- dbConnect(MySQL(), user='czech', password='czech123', dbname='czech', host='czech-mysql.ctidba6hrq5v.us-east-1.rds.amazonaws.com')
+```
+
+# Análise Exploratória
+
+Os emprestimos na base possuem a distribuição a seguir
+
+```{r}
+loan <- dbReadTable(con, "loan")
+hist(loan$status)
+```
+
+
+# Regressao para atingir o objetivo
+
+# Conclusão
+
