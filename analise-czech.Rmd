@@ -155,9 +155,9 @@ Podemos verificar que o sexo do cliente não possui relação (alto p-value) com
 - H1 : As regiões inflenciam na inadimplencia
 
 ```{r}
-geo_loan <- merge(account_loan, demograph, by.x = c("manager_id.y"), by.y = c("manager_id.x"))
-novo_modelo <- glm(inadimplentes ~ payments, data = geo_loan)
-summary(geo_loan)
+##geo_loan <- merge(account_loan, demograph, by.x = c("manager_id.y"), by.y = c("manager_id.x"))
+##novo_modelo <- glm(inadimplentes ~ payments, data = geo_loan)
+##summary(geo_loan)
 ```
 
 
