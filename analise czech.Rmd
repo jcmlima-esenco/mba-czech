@@ -1,9 +1,11 @@
 ---
 title: "Analise Czech"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
-# Objetivo
+# Objetivo ################################
 
 Um banco quer melhor os seus servicos.
 
@@ -30,7 +32,7 @@ As situações de um emprestimo podem ser:
 'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
 
 A pergunta que se quer responder é:
-Dado um cliente, com contrato em andamento, qual a probabilidade de quando o emprestimo for finalizado, ele terminar em "default" ou quitado?
+Dado um cliente, qual a probabilidade de quando o emprestimo for finalizado, ele se tornar inadimplente ou ter contrato default?
 
 *Podemos também determinar quem é um bom cliente por outros prismas, mas para esta análise iremos focar na relação de cliente e emprestimos.*
 
@@ -42,73 +44,114 @@ Para mais informações sobre o modelo de dados, vide documento **PKDD'99 Discov
 
 Estes dados serão utilizados para a modelagem do problema e construção de um modelo preditivo
 
-```{r}
+```{r echo = FALSE}
+# Libraries
 library(RMySQL)
 library(ggplot2)
 library(dplyr)
+
+#database connection
 con <- dbConnect(MySQL(), user='czech', password='czech123', dbname='czech', host='czech-mysql.ctidba6hrq5v.us-east-1.rds.amazonaws.com')
+
+# principais tabelas
+client <- dbReadTable(con, "client")
+account <- dbReadTable(con, "account")
+disp <- dbReadTable(con, "disposition")
+account_disp <- merge(account, disp, by="account_id")
+account_client <- merge(account_disp, client, by = "client_id")
+
 ```
 
 # Análise Exploratória
 
-Os emprestimos, ao termino do prazo, possuem a distribuição a seguir:
+Os empréstimos, possuem a distribuição a seguir:
 
 ```{r}
 loan <- dbReadTable(con, "loan")
-loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
-loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "B"))
-loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
-
+loan <- loan %>% mutate(inadimplentes = (status == "B" | status == "D"))
+loan %>% ggplot(aes(x=inadimplentes)) + geom_bar() 
 ```
 
-# Correlacoes, apenas dentro de Loan.
+# Correlações, apenas utilizando variáveis de empréstimo.
 
-## Amount influencia?
+## Montante do empréstimo influência?
+
+H0 : O montante do empréstimo não influencia a inadimplência
+HA : O montante do empréstimo influencia a inadimplência
+
 ```{r}
-model_amount <- glm(adimplentes ~ amount, data = loan_finalizados)
+model_amount <- glm(inadimplentes ~ amount, data = loan)
 summary(model_amount)
+melhor_modelo <- model_amount
 ```
 
 Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadimplencia (p-value = 0,000355) - existe uma forte corelação entre o amount e a adimplencia.
 
-```{r}
-loan %>% ggplot(aes(x=status, y=amount)) + geom_boxplot()
-```
+## A duraçãoo dos emprestimos
 
-## E a duração do emprestimo, influencia?
+H0 : A duração dos empréstimos não influência a inadimplencia
+HA : A duração dos empréstimos influência a inadimplencia
 
 ```{r}
-model_amount <- glm(adimplentes ~ durantion, data = loan_finalizados)
-summary(model_amount)
+model_duration <- glm(inadimplentes ~ durantion, data = loan)
+summary(model_duration)
 ```
 Podemos visualizar que a duração não influencia ( p-value = 0.146 )
 
-E ambos juntos?
+## E ambos juntos?
 
 ```{r}
-model_amount <- glm(adimplentes ~ durantion + amount, data = loan_finalizados)
-summary(model_amount)
+model_ambos <- glm(inadimplentes ~ durantion + amount, data = loan)
+summary(model_ambos)
+melhor_modelo <- model_ambos
 ```
 
-Para os clientes com emprestimos em andamento, podemos verificar se a proporção de clientes em atraso é a mesma para de clientes que encerraram o contrato em default.
+O valor e a duração juntos influenciam a inadimplencia!
+
+## O valor das parcelas influenciam?
+
+H0 : O valor das parcelas não influência a inadimplencia
+HA : O valor das parcelas influência a inadimplencia 
 
 ```{r}
-loan <- dbReadTable(con, "loan")
-loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
-loan_finalizados <- loan %>% filter(status == "C" | status == "D") %>% mutate(adimplentes = (status == "D"))
-loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
+model_candidato <- glm(inadimplentes ~ amount + durantion + payments, data = melhor_modelo)
+summary(model_candidato)
 ```
+Podemos visualizar que a duração não influencia ( p-value = 0.146 )
+
+
+
+
+RASCUNHO DAQUI PRA BAIXO
+
 
 Vê se assim uma semelhança entre os clientes que encerraram o contrato sem o pagamento e os clientes que ainda possuem contrato mas estao inadimplentes.
 
-## A quem deve-se ofertar/reduzir o cartão de acordo com o com região / crédito / perfil do cliente. 
+# Sexo influencia no perfil do inadimplente?
+
+A distribuição de todos os clientes, na base é
 
 ```{r}
-loan <- dbReadTable(con, "client")
-loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
-loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "A"))
-loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
+
+client %>% ggplot(aes(x=sex)) + geom_bar() + theme_bw()
+
+
 ```
+
+## Avaliando apenas entre os clientes inadimplentes sejam eles com contrato terminado ou não, existe alguma correlação?
+
+```{r message=TRUE, warning=TRUE, paged.print=TRUE}
+account_loan <- merge(account_client, loan, by="account_id")
+loan_default <- account_loan %>% mutate(inadimplentes = (status == "B" | status == "D" ))
+loan_default <- loan_default %>% mutate(is_male = (sex == "Male")) ## dummy
+model_loan_client <- glm(inadimplentes ~ amount + is_male, data = loan_default)
+summary(model_loan_client)
+```
+
+Não é relevante o sexo do cliente.
+
+## 
+
 
 
 #############################
