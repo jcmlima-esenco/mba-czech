@@ -9,6 +9,16 @@ Um banco quer melhor os seus servicos.
 
 Como exemplo, os gerentes tem apenas uma idéia vaga, de quem é um bom cliente e de quem é o mal cliente.
 
+Os gerentes não possuem nenhum pergunta especifica, então a análise ocorrera com enfoque na exploração, tentando responder algumas hipotéticas questões 
+
+- O que, dentro das característoas de um emprestimo, influencia a inadimplencia de um cliente
+- A quem deve-se ofertar/reduzir o cartão de acordo com o com região / crédito / perfil do cliente.
+- ofertar/reduzir crédito de acordo com região / crédito / perfil do cliente
+- marketing para abrir contas em determinada região.
+
+
+## Analise de inadimplencia do cliente
+
 Um bom cliente, iremos definir que é o cliente que realizar emprestimos e paga os mesmos. Cliente adimplente.
 Um mal cliente, iremos definir que é o cliente que realizar emprestimos e não paga os mesmos. Cliente inadimplente.
 
@@ -19,7 +29,7 @@ As situações de um emprestimo podem ser:
 'C' Contrato de emprestimo em andamento, com pagamentos em dia.
 'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
 
-A pergunta que se quer responder é.
+A pergunta que se quer responder é:
 Dado um cliente, com contrato em andamento, qual a probabilidade de quando o emprestimo for finalizado, ele terminar em "default" ou quitado?
 
 *Podemos também determinar quem é um bom cliente por outros prismas, mas para esta análise iremos focar na relação de cliente e emprestimos.*
@@ -41,35 +51,74 @@ con <- dbConnect(MySQL(), user='czech', password='czech123', dbname='czech', hos
 
 # Análise Exploratória
 
-Os emprestimos na base possuem a distribuição a seguir
+Os emprestimos, ao termino do prazo, possuem a distribuição a seguir:
 
 ```{r}
 loan <- dbReadTable(con, "loan")
 loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
-loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "A"))
+loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "B"))
 loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
 
 ```
 
-# correlacoes, apenas dentro de Loan.
+# Correlacoes, apenas dentro de Loan.
 
 ## Amount influencia?
 ```{r}
 model_amount <- glm(adimplentes ~ amount, data = loan_finalizados)
 summary(model_amount)
 ```
-Sim!! Quanto, p-value = 0,000355, existe uma forte corelação entre o amount e a adimplencia
+
+Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadimplencia (p-value = 0,000355) - existe uma forte corelação entre o amount e a adimplencia.
 
 ```{r}
 loan %>% ggplot(aes(x=status, y=amount)) + geom_boxplot()
 ```
 
+## E a duração do emprestimo, influencia?
+
+```{r}
+model_amount <- glm(adimplentes ~ durantion, data = loan_finalizados)
+summary(model_amount)
+```
+Podemos visualizar que a duração não influencia ( p-value = 0.146 )
+
+E ambos juntos?
+
+```{r}
+model_amount <- glm(adimplentes ~ durantion + amount, data = loan_finalizados)
+summary(model_amount)
+```
+
+Para os clientes com emprestimos em andamento, podemos verificar se a proporção de clientes em atraso é a mesma para de clientes que encerraram o contrato em default.
+
+```{r}
+loan <- dbReadTable(con, "loan")
+loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
+loan_finalizados <- loan %>% filter(status == "C" | status == "D") %>% mutate(adimplentes = (status == "D"))
+loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
+```
+
+Vê se assim uma semelhança entre os clientes que encerraram o contrato sem o pagamento e os clientes que ainda possuem contrato mas estao inadimplentes.
+
+## A quem deve-se ofertar/reduzir o cartão de acordo com o com região / crédito / perfil do cliente. 
+
+```{r}
+loan <- dbReadTable(con, "client")
+loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
+loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "A"))
+loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
+```
+
+
+#############################
+## A quem ofertar/reduzir crédito de acordo com região / crédito / perfil do cliente
+## Qual marketing para abrir contas em determinada região.
 
 
 
-Sim
 
 
 
-# Conclusão
+
 
