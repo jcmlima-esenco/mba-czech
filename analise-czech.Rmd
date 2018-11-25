@@ -1,6 +1,7 @@
 ---
 title: "Analise Czech"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -17,7 +18,6 @@ Os gerentes não possuem nenhum pergunta especifica, então a análise ocorrera 
 - A quem deve-se ofertar/reduzir o cartão de acordo com o com região / crédito / perfil do cliente.
 - ofertar/reduzir crédito de acordo com região / crédito / perfil do cliente
 - marketing para abrir contas em determinada região.
-
 
 ## Analise de inadimplencia do cliente
 
@@ -59,7 +59,7 @@ account <- dbReadTable(con, "account")
 disp <- dbReadTable(con, "disposition")
 account_disp <- merge(account, disp, by="account_id")
 account_client <- merge(account_disp, client, by = "client_id")
-
+demograph <- dbReadTable(con, "demograph")
 ```
 
 # Análise Exploratória
@@ -89,8 +89,8 @@ Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadim
 
 ## A duraçãoo dos emprestimos
 
-H0 : A duração dos empréstimos não influência a inadimplencia
-HA : A duração dos empréstimos influência a inadimplencia
+- H0 : A duração dos empréstimos não influência a inadimplencia
+- HA : A duração dos empréstimos influência a inadimplencia
 
 ```{r}
 model_duration <- glm(inadimplentes ~ durantion, data = loan)
@@ -101,9 +101,9 @@ Podemos visualizar que a duração não influencia ( p-value = 0.146 )
 ## E ambos juntos?
 
 ```{r}
-model_ambos <- glm(inadimplentes ~ durantion + amount, data = loan)
-summary(model_ambos)
-melhor_modelo <- model_ambos
+novo_modelo <- glm(inadimplentes ~ durantion + amount, data = loan)
+summary(novo_modelo)
+melhor_modelo <- novo_modelo
 ```
 
 O valor e a duração juntos influenciam a inadimplencia!
@@ -114,49 +114,63 @@ H0 : O valor das parcelas não influência a inadimplencia
 HA : O valor das parcelas influência a inadimplencia 
 
 ```{r}
-model_candidato <- glm(inadimplentes ~ amount + durantion + payments, data = melhor_modelo)
-summary(model_candidato)
+novo_modelo <- glm(inadimplentes ~ payments, data = loan)
+summary(novo_modelo)
 ```
-Podemos visualizar que a duração não influencia ( p-value = 0.146 )
 
+O valor da parcela influencia a inadimplencia!
 
+Mas devemos incluir a valor no modelo candidato ? 
+```{r}
+novo_modelo <- glm(inadimplentes ~ amount + durantion + payments, data = loan)
+summary(novo_modelo)
+```
 
+Neste modelo, todos os p-values são maiores que 0,05, assim, optamos por não utilizar o valor da prestacao.
 
-RASCUNHO DAQUI PRA BAIXO
+## O Sexo do cliente influencia na inadimplencia?
 
+- H0 : O sexo do cliente não influência a inadimplencia
+- HA : O sexo do cliente influência a inadimplencia 
 
-Vê se assim uma semelhança entre os clientes que encerraram o contrato sem o pagamento e os clientes que ainda possuem contrato mas estao inadimplentes.
-
-# Sexo influencia no perfil do inadimplente?
-
-A distribuição de todos os clientes, na base é
+O sexo entre os clientes se distribui como
 
 ```{r}
-
-client %>% ggplot(aes(x=sex)) + geom_bar() + theme_bw()
-
-
+account_client %>% ggplot(aes(x=sex)) + geom_bar() 
 ```
 
-## Avaliando apenas entre os clientes inadimplentes sejam eles com contrato terminado ou não, existe alguma correlação?
+Logo, temos uma distribuição quase equilibrado entre ambos os sexos, mas em relacão a inadimplencia, como se comportam ambos os sexos?
 
-```{r message=TRUE, warning=TRUE, paged.print=TRUE}
-account_loan <- merge(account_client, loan, by="account_id")
-loan_default <- account_loan %>% mutate(inadimplentes = (status == "B" | status == "D" ))
-loan_default <- loan_default %>% mutate(is_male = (sex == "Male")) ## dummy
-model_loan_client <- glm(inadimplentes ~ amount + is_male, data = loan_default)
-summary(model_loan_client)
+```{r}
+account_loan <- account_client %>% merge(loan, by = "account_id")
+novo_modelo <- glm(inadimplentes ~ sex , data = account_loan)
+summary(novo_modelo)
 ```
 
-Não é relevante o sexo do cliente.
+Podemos verificar que o sexo do cliente não possui relação (alto p-value) com a inadimplencia ou não do mesmo.
 
-## 
+## Região geográfica influencia?
+
+- H0 : As regiões não influenciam na inadimplencia
+- H1 : As regiões inflenciam na inadimplencia
+
+```{r}
+geo_loan <- merge(account_loan, demograph, by.x = c("manager_id.y"), by.y = c("manager_id.x"))
+novo_modelo <- glm(inadimplentes ~ payments, data = geo_loan)
+summary(geo_loan)
+```
+
+
+## A idade do cliente influencia na inadimplencia?
+
+## O QUE MAIS PODEMOS CRUZAR E VER SE INFLUENCIA NO MODELO DE PREVISAO DE INADIMPLENCIA??? DE OUTRAS TABELAS?????
+
+```{r}
+lapply( dbListConnections( dbDriver( drv = "MySQL")), dbDisconnect)
+```
 
 
 
-#############################
-## A quem ofertar/reduzir crédito de acordo com região / crédito / perfil do cliente
-## Qual marketing para abrir contas em determinada região.
 
 
 
