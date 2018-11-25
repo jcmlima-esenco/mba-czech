@@ -34,6 +34,8 @@ Estes dados serão utilizados para a modelagem do problema e construção de um 
 
 ```{r}
 library(RMySQL)
+library(ggplot2)
+library(dplyr)
 con <- dbConnect(MySQL(), user='czech', password='czech123', dbname='czech', host='czech-mysql.ctidba6hrq5v.us-east-1.rds.amazonaws.com')
 ```
 
@@ -43,11 +45,31 @@ Os emprestimos na base possuem a distribuição a seguir
 
 ```{r}
 loan <- dbReadTable(con, "loan")
-hist(loan$status)
+loan %>% ggplot(aes(x=status)) + geom_bar() + theme_bw()
+loan_finalizados <- loan %>% filter(status == "A" | status == "B") %>% mutate(adimplentes = (status == "A"))
+loan_finalizados %>% ggplot(aes(x=adimplentes)) + geom_bar() + theme_bw()
+
+```
+
+# correlacoes, apenas dentro de Loan.
+
+## Amount influencia?
+```{r}
+model_amount <- glm(adimplentes ~ amount, data = loan_finalizados)
+summary(model_amount)
+```
+Sim!! Quanto, p-value = 0,000355, existe uma forte corelação entre o amount e a adimplencia
+
+```{r}
+loan %>% ggplot(aes(x=status, y=amount)) + geom_boxplot()
 ```
 
 
-# Regressao para atingir o objetivo
+
+
+Sim
+
+
 
 # Conclusão
 
