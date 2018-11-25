@@ -6,7 +6,7 @@ output:
     df_print: paged
 ---
 
-# Objetivo ################################
+# Objetivo #
 
 Um banco quer melhor os seus servicos.
 
@@ -44,7 +44,7 @@ Para mais informações sobre o modelo de dados, vide documento **PKDD'99 Discov
 
 Estes dados serão utilizados para a modelagem do problema e construção de um modelo preditivo
 
-```{r echo = FALSE}
+```{r echo=FALSE, warning=FALSE}
 # Libraries
 library(RMySQL)
 library(ggplot2)
@@ -66,7 +66,7 @@ demograph <- dbReadTable(con, "demograph")
 
 Os empréstimos, possuem a distribuição a seguir:
 
-```{r}
+```{r warning=FALSE}
 loan <- dbReadTable(con, "loan")
 loan <- loan %>% mutate(inadimplentes = (status == "B" | status == "D"))
 loan %>% ggplot(aes(x=inadimplentes)) + geom_bar() 
@@ -79,7 +79,7 @@ loan %>% ggplot(aes(x=inadimplentes)) + geom_bar()
 H0 : O montante do empréstimo não influencia a inadimplência
 HA : O montante do empréstimo influencia a inadimplência
 
-```{r}
+```{r warning=FALSE}
 model_amount <- glm(inadimplentes ~ amount, data = loan)
 summary(model_amount)
 melhor_modelo <- model_amount
@@ -92,7 +92,7 @@ Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadim
 - H0 : A duração dos empréstimos não influência a inadimplencia
 - HA : A duração dos empréstimos influência a inadimplencia
 
-```{r}
+```{r warning=FALSE}
 model_duration <- glm(inadimplentes ~ durantion, data = loan)
 summary(model_duration)
 ```
@@ -100,7 +100,7 @@ Podemos visualizar que a duração não influencia ( p-value = 0.146 )
 
 ## E ambos juntos?
 
-```{r}
+```{r warning=FALSE}
 novo_modelo <- glm(inadimplentes ~ durantion + amount, data = loan)
 summary(novo_modelo)
 melhor_modelo <- novo_modelo
@@ -113,7 +113,7 @@ O valor e a duração juntos influenciam a inadimplencia!
 H0 : O valor das parcelas não influência a inadimplencia
 HA : O valor das parcelas influência a inadimplencia 
 
-```{r}
+```{r warning=FALSE}
 novo_modelo <- glm(inadimplentes ~ payments, data = loan)
 summary(novo_modelo)
 ```
@@ -121,7 +121,7 @@ summary(novo_modelo)
 O valor da parcela influencia a inadimplencia!
 
 Mas devemos incluir a valor no modelo candidato ? 
-```{r}
+```{r warning=FALSE}
 novo_modelo <- glm(inadimplentes ~ amount + durantion + payments, data = loan)
 summary(novo_modelo)
 ```
@@ -135,13 +135,13 @@ Neste modelo, todos os p-values são maiores que 0,05, assim, optamos por não u
 
 O sexo entre os clientes se distribui como
 
-```{r}
+```{r warning=FALSE}
 account_client %>% ggplot(aes(x=sex)) + geom_bar() 
 ```
 
 Logo, temos uma distribuição quase equilibrado entre ambos os sexos, mas em relacão a inadimplencia, como se comportam ambos os sexos?
 
-```{r}
+```{r warning=FALSE}
 account_loan <- account_client %>% merge(loan, by = "account_id")
 novo_modelo <- glm(inadimplentes ~ sex , data = account_loan)
 summary(novo_modelo)
@@ -154,18 +154,83 @@ Podemos verificar que o sexo do cliente não possui relação (alto p-value) com
 - H0 : As regiões não influenciam na inadimplencia
 - H1 : As regiões inflenciam na inadimplencia
 
-```{r}
-##geo_loan <- merge(account_loan, demograph, by.x = c("manager_id.y"), by.y = c("manager_id.x"))
-##novo_modelo <- glm(inadimplentes ~ payments, data = geo_loan)
-##summary(geo_loan)
+Vejamos o total dos emprestimos por região
+
+```{r warning=FALSE}
+geo_loan <- merge(account_loan, demograph, by.x = c("district_id.y"), by.y = c("district_id"))
+geo_loan %>% ggplot(aes(x=A2)) + geom_bar() 
 ```
+
+Analisemos a quantidade de emprestimos por regiao
+```{r warning=FALSE}
+ x <- geo_loan %>% group_by(A2) %>%
+  summarise(total = n()) 
+```
+
+E a quantidade de inadimplentes por região
+
+```{r warning=FALSE}
+  geo_loan %>% filter(inadimplentes) %>%group_by(A2) %>%
+  summarise(total = n()) 
+```
+
+Existe alguma relação entre região e inadimplencia, i.é, alguma região onde a inadimplencia é melhor?
+
+```{r warning=FALSE}
+novo_modelo <- glm(inadimplentes ~ A2, data =  geo_loan)
+summary(novo_modelo)
+```
+
+Devido a quantidade de regioes, devemos procurar as que mais influenciam
+
+```{r warning=FALSE}
+step(novo_modelo)
+```
+
+Assim, a região também não influencia a inadimplencia
+
+## Salário influencia?
+
+- H0 : O Salário médio da região do não cliente influencia na inadimplencia
+- HA : O Salário médio da região do cliente influencia na inadimplencia
+
+```{r warning=FALSE}
+novo_modelo <- glm(inadimplentes ~ A11, data =  geo_loan)
+summary(novo_modelo)
+```
+
+Também não há influencia estatisticamente relevante em relação ao salário médio da região do cliente.
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## A idade do cliente influencia na inadimplencia?
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## O QUE MAIS PODEMOS CRUZAR E VER SE INFLUENCIA NO MODELO DE PREVISAO DE INADIMPLENCIA??? DE OUTRAS TABELAS?????
 
-```{r}
+``````{r warning=FALSE}
 lapply( dbListConnections( dbDriver( drv = "MySQL")), dbDisconnect)
 ```
 
