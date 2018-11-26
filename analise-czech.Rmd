@@ -6,7 +6,7 @@ output:
     df_print: paged
 ---
 
-# Objetivo #
+# Análise Inadimplência #
 
 Um banco quer melhorar os seus servicos.
 
@@ -23,10 +23,10 @@ Um mal cliente, iremos definir que é o cliente que realizar emprestimos e não 
 
 As situações de um empréstimo podem ser:
 
-'A' Contrato de emprestimo finalizado sem problema.
-'B' Contrato de emprestimo finalizado, porém o emprestimo não foi pago.
-'C' Contrato de emprestimo em andamento, com pagamentos em dia.
-'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
+- 'A' Contrato de emprestimo finalizado sem problema.
+- 'B' Contrato de emprestimo finalizado, porém o emprestimo não foi pago.
+- 'C' Contrato de emprestimo em andamento, com pagamentos em dia.
+- 'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
 
 A pergunta que se quer responder é:
 Conseguimos determinar, dado um cliente e as características de um empréstimo, a probabilidade dele se tornar inadimplente? 
@@ -212,46 +212,17 @@ summary(novo_modelo)
 
 Também não há influencia estatistica relevante em relação ao salário médio da região do cliente.
 
+# Conclusão
 
+Os melhores preditores para se determinar a inadimplencia ou não, são a duração e o montante do emprestimo.
 
-
-
-
-
-
-
-
-
-
-
-## A idade do cliente influencia na inadimplencia?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## O QUE MAIS PODEMOS CRUZAR E VER SE INFLUENCIA NO MODELO DE PREVISAO DE INADIMPLENCIA??? DE OUTRAS TABELAS?????
-
-``````{r warning=FALSE}
-lapply( dbListConnections( dbDriver( drv = "MySQL")), dbDisconnect)
+```{r}
+summary(melhor_modelo)
 ```
 
+Porém ainda pode-se explorar outras variáveis relativas ao cliente, como volume de transações, a quanto tempo ele é cliente, etc.
 
-
-
-
-
-
-
-
-
+``````{r echo=FALSE, warning=FALSE}
+lapply( dbListConnections( dbDriver( drv = "MySQL")), dbDisconnect)
+```
 
