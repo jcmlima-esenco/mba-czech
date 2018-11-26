@@ -36,11 +36,11 @@ Este valor pode ser importante para o cálculo de possíveis perdas, valor do sp
 
 # Leitura de dados
 
-O banco possue dados históricos, de transações, emprestimos, geolocalizacao, uso do cartão e outros. Os dados foram limpos e encontram-se em uma base MySQL
+O banco possue dados históricos, de transações, emprestimos, geolocalizacao, uso do cartão e outros. Os dados foram limpos (data wrangling) e encontram-se em uma base MySQL.
 
-Para mais informações sobre o modelo de dados, vide documento **PKDD'99 Discovery Challenge Guide to the Financial Data Set**
+Para mais informações sobre o modelo de dados, vide documento **PKDD'99 Discovery Challenge Guide to the Financial Data Set**.
 
-Estes dados serão utilizados para a modelagem do problema e construção de um modelo preditivo
+Estes dados serão utilizados para a modelagem do problema e tentativa de construção de um modelo preditivo logístico.
 
 ```{r echo=FALSE, warning=FALSE}
 # Libraries
@@ -62,7 +62,7 @@ demograph <- dbReadTable(con, "demograph")
 
 # Análise Exploratória
 
-Os empréstimos, possuem a distribuição a seguir:
+Os empréstimos possuem a distribuição a seguir:
 
 ```{r warning=FALSE}
 loan <- dbReadTable(con, "loan")
@@ -70,12 +70,12 @@ loan <- loan %>% mutate(inadimplentes = (status == "B" | status == "D"))
 loan %>% ggplot(aes(x=inadimplentes)) + geom_bar() 
 ```
 
-# Correlações, apenas utilizando variáveis de empréstimo.
+# Procurando correlações
 
-## Montante do empréstimo influência?
+## Montante do empréstimo influencia a inadimplência?
 
-H0 : O montante do empréstimo não influencia a inadimplência
-HA : O montante do empréstimo influencia a inadimplência
+- H0 : O montante do empréstimo não influencia a inadimplência.
+- HA : O montante do empréstimo influencia a inadimplência.
 
 ```{r warning=FALSE}
 model_amount <- glm(inadimplentes ~ amount, data = loan)
@@ -85,7 +85,7 @@ melhor_modelo <- model_amount
 
 Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadimplencia (p-value = 0,000355) - existe uma forte corelação entre o amount e a adimplencia.
 
-## A duraçãoo dos emprestimos
+## A duração dos emprestimos
 
 - H0 : A duração dos empréstimos não influência a inadimplencia
 - HA : A duração dos empréstimos influência a inadimplencia
@@ -94,9 +94,10 @@ Logo, podemos ver que o valor do emprestimo influencia a probabilidade de inadim
 model_duration <- glm(inadimplentes ~ durantion, data = loan)
 summary(model_duration)
 ```
+
 Podemos visualizar que a duração não influencia ( p-value = 0.146 )
 
-## E ambos juntos?
+## E ambos, montante e duração, juntos, melhoram o modelo preditivo?
 
 ```{r warning=FALSE}
 novo_modelo <- glm(inadimplentes ~ durantion + amount, data = loan)
@@ -106,10 +107,10 @@ melhor_modelo <- novo_modelo
 
 O valor e a duração juntos influenciam a inadimplencia!
 
-## O valor das parcelas influenciam?
+## O valor das parcelas a serem pagas influenciam?
 
-H0 : O valor das parcelas não influência a inadimplencia
-HA : O valor das parcelas influência a inadimplencia 
+- H0 : O valor das parcelas não influência a inadimplencia
+- HA : O valor das parcelas influência a inadimplencia 
 
 ```{r warning=FALSE}
 novo_modelo <- glm(inadimplentes ~ payments, data = loan)
@@ -124,12 +125,24 @@ novo_modelo <- glm(inadimplentes ~ amount + durantion + payments, data = loan)
 summary(novo_modelo)
 ```
 
-Neste modelo, todos os p-values são maiores que 0,05, assim, optamos por não utilizar o valor da prestacao.
+Neste modelo, todos os p-values são maiores que 0,05. Como individualmente eles possuem relevancia, vamos reduzir a dois preditores.
 
-## O Sexo do cliente influencia na inadimplencia?
+```{r}
+step_model <- step(novo_modelo)
+summary(step_model)
+```
 
-- H0 : O sexo do cliente não influência a inadimplencia
-- HA : O sexo do cliente influência a inadimplencia 
+Reduzindo-se assim para apenas duas variáveis, Montante do emprestimo e duração do emprestimo, temos o melhor modelo até o momento.
+
+```{r}
+melhor_modelo <- step_model
+```
+
+
+## O Sexo do cliente influencia na inadimplência?
+
+- H0 : O sexo do cliente não influencia a inadimplência
+- HA : O sexo do cliente influencia a inadimplência 
 
 O sexo entre os clientes se distribui como
 
@@ -137,7 +150,7 @@ O sexo entre os clientes se distribui como
 account_client %>% ggplot(aes(x=sex)) + geom_bar() 
 ```
 
-Logo, temos uma distribuição quase equilibrado entre ambos os sexos, mas em relacão a inadimplencia, como se comportam ambos os sexos?
+Logo, temos uma distribuição quase igual entre ambos os sexos, mas em relacão a inadimplencia, como se comportam ambos os sexos?
 
 ```{r warning=FALSE}
 account_loan <- account_client %>% merge(loan, by = "account_id")
@@ -145,7 +158,7 @@ novo_modelo <- glm(inadimplentes ~ sex , data = account_loan)
 summary(novo_modelo)
 ```
 
-Podemos verificar que o sexo do cliente não possui relação (alto p-value) com a inadimplencia ou não do mesmo.
+Podemos verificar que o sexo do cliente não possui relação (alto p-value) com a inadimplencia.
 
 ## Região geográfica influencia?
 
@@ -179,7 +192,7 @@ novo_modelo <- glm(inadimplentes ~ A2, data =  geo_loan)
 summary(novo_modelo)
 ```
 
-Devido a quantidade de regioes, devemos procurar as que mais influenciam
+Devido a quantidade de regiões, podemos  procurar as que mais influenciam
 
 ```{r warning=FALSE}
 step(novo_modelo)
@@ -197,7 +210,7 @@ novo_modelo <- glm(inadimplentes ~ A11, data =  geo_loan)
 summary(novo_modelo)
 ```
 
-Também não há influencia estatisticamente relevante em relação ao salário médio da região do cliente.
+Também não há influencia estatistica relevante em relação ao salário médio da região do cliente.
 
 
 
