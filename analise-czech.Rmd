@@ -8,23 +8,20 @@ output:
 
 # Objetivo #
 
-Um banco quer melhor os seus servicos.
+Um banco quer melhorar os seus servicos.
 
-Como exemplo, os gerentes tem apenas uma idéia vaga, de quem é um bom cliente e de quem é o mal cliente.
+Como exemplo, os gerentes tem apenas uma idéia vaga, de quem é um bom cliente e de quem é um mal cliente.
 
-Os gerentes não possuem nenhum pergunta especifica, então a análise ocorrera com enfoque na exploração, tentando responder algumas hipotéticas questões 
+Os gerentes não possuem nenhuma pergunta especifica, então a análise ocorrerá com enfoque na exploração, tentando responder uma  questão hipotética. 
 
-- O que, dentro das característoas de um emprestimo, influencia a inadimplencia de um cliente
-- A quem deve-se ofertar/reduzir o cartão de acordo com o com região / crédito / perfil do cliente.
-- ofertar/reduzir crédito de acordo com região / crédito / perfil do cliente
-- marketing para abrir contas em determinada região.
+- O que, dentro das característoas de um empréstimo, e do seu perfil, influencia a inadimplencia de um cliente?
 
-## Analise de inadimplencia do cliente
+## Análise de inadimplência do cliente
 
-Um bom cliente, iremos definir que é o cliente que realizar emprestimos e paga os mesmos. Cliente adimplente.
+Um bom cliente, iremos definir que é o cliente que realiza empréstimos e paga os mesmos. Cliente adimplente.
 Um mal cliente, iremos definir que é o cliente que realizar emprestimos e não paga os mesmos. Cliente inadimplente.
 
-As situações de um emprestimo podem ser:
+As situações de um empréstimo podem ser:
 
 'A' Contrato de emprestimo finalizado sem problema.
 'B' Contrato de emprestimo finalizado, porém o emprestimo não foi pago.
@@ -32,9 +29,10 @@ As situações de um emprestimo podem ser:
 'D' Contrato de emprestimo em andamento, com pagamentos em atraso.
 
 A pergunta que se quer responder é:
-Dado um cliente, qual a probabilidade de quando o emprestimo for finalizado, ele se tornar inadimplente ou ter contrato default?
+Conseguimos determinar, dado um cliente e as características de um empréstimo, a probabilidade dele se tornar inadimplente? 
+Este valor pode ser importante para o cálculo de possíveis perdas, valor do spread, etc.
 
-*Podemos também determinar quem é um bom cliente por outros prismas, mas para esta análise iremos focar na relação de cliente e emprestimos.*
+*Poderíamos também determinar quem é um bom cliente por outros prismas, mas para esta análise iremos focar na relação de cliente e emprestimos.*
 
 # Leitura de dados
 
